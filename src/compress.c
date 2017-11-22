@@ -2,12 +2,21 @@
 
 #include <lzo/lzo1x.h>
 #include <bzlib.h>
-#include <lz4.h>
-#include <lzma.h>
+
+#include "config.h"
+
+#ifdef HAVE_LIBLZ4
+  #include <lz4.h>
+#endif
+
+#ifdef HAVE_LIBLZMA
+  #include <lzma.h>
+#endif
 
 #include "types.h"
 #include "utils.h"
 #include "compress.h"
+
 
 int bz2_preset = BZ2_PRESET;
 int lzma_preset = LZMA_PRESET;
@@ -227,6 +236,7 @@ failure:
 
 int compress_lz4(nf_block_t* block)
 {
+#ifdef HAVE_LIBLZ4
   // Expected the block to have data
   if (block->data == NULL) {
     msg(log_error, "Block has no data\n");
@@ -265,11 +275,16 @@ int compress_lz4(nf_block_t* block)
 failure:
   free(buffer);
   return -1;
+#else
+  msg(log_error, "LZ4 support is not compiled in.\n");
+  return -1;
+#endif
 }
 
 
 int decompress_lz4(nf_block_t* block)
 {
+#ifdef HAVE_LIBLZ4
   // Expected the block to have data
   if (block->data == NULL) {
     msg(log_error, "Block has no data\n");
@@ -322,10 +337,15 @@ int decompress_lz4(nf_block_t* block)
 failure:
   free(buffer);
   return -1;
+#else
+  msg(log_error, "LZ4 support is not compiled in.\n");
+  return -1;
+#endif
 }
 
 int compress_lzma(nf_block_t* block)
 {
+#ifdef HAVE_LIBLZMA
   // Expected the block to have data
   if (block->data == NULL) {
     msg(log_error, "Block has no data\n");
@@ -374,10 +394,15 @@ int compress_lzma(nf_block_t* block)
 failure:
   free(buffer);
   return -1;
+#else
+  msg(log_error, "LZMA support is not compiled in.\n");
+  return -1;
+#endif
 }
 
 int decompress_lzma(nf_block_t* block)
 {
+#ifdef HAVE_LIBLZMA
   // Expected the block to have data
   if (block->data == NULL) {
     msg(log_error, "Block has no data\n");
@@ -438,6 +463,10 @@ int decompress_lzma(nf_block_t* block)
 failure:
   free(buffer);
   return -1;
+#else
+  msg(log_error, "LZMA support is not compiled in.\n");
+  return -1;
+#endif
 }
 
 void decompressor(const int blocknum, nf_block_t* block)
