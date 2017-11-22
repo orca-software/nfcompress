@@ -1,0 +1,8 @@
+This package contains two tools:
+ * nfdecompress: decompressed the flow data in nfdump files to stdout
+ * nfrecompress: recompressed nfdump files with an alternative compression method
+
+Install with:
+./bootstrap && ./configure && make && make install
+
+Author: by Jaap Versteegh
