@@ -15,22 +15,13 @@
 #include "types.h"
 
 #define DEFAULT_BZ2_PRESET 9
-#define DEFAULTS_LZMA_PRESET 6
+#define DEFAULT_LZMA_PRESET 6
 
 extern int bz2_preset;
 extern int lzma_preset;
 
-extern int compress_bz2(nf_block_t* block);
-extern int decompress_bz2(nf_block_t* block);
-
-extern int compress_lz4(nf_block_t* block);
-extern int decompress_lz4(nf_block_t* block);
-
-extern int compress_lzo(nf_block_t* block);
-extern int decompress_lzo(nf_block_t* block);
-
-extern int compress_lzma(nf_block_t* block);
-extern int decompress_lzma(nf_block_t* block);
+int compress(nf_block_t* block, compression_t compression);
+int decompress(nf_block_t* block);
 
 extern void decompressor(const int blocknum, nf_block_t* block);
 
