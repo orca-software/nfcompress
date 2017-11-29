@@ -5,6 +5,7 @@
 /compile
 /config.h
 /config.h.in
+/config.h.in~
 /config.log
 /config.status
 /configure
@@ -18,5 +19,9 @@
 /stamp-h1
 /src/nfdecompress
 /src/nfrecompress
-
-
+/doc/Doxyfile
+/doc/Makefile
+/doc/Makefile.in
+/doc/html/
+/doc/man/
+/doc/xml/

@@ -5,4 +5,4 @@ This package contains two tools:
 Install with:
   ./bootstrap && ./configure && make && make install
 
-Written by Jaap Versteegh <j.r.versteegh@orca-st.com>
+Written by Jaap Versteegh <j.r.versteegh@orca-st.com> for SURFnet
