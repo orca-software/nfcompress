@@ -29,8 +29,8 @@
 #include "compress.h"
 
 
-int bz2_preset = BZ2_PRESET;
-int lzma_preset = LZMA_PRESET;
+int bz2_preset = DEFAULT_BZ2_PRESET;
+int lzma_preset = DEFAULT_LZMA_PRESET;
 
 int compress_lzo(nf_block_t* block)
 {

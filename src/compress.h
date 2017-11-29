@@ -14,8 +14,8 @@
 
 #include "types.h"
 
-#define BZ2_PRESET 9
-#define LZMA_PRESET 6
+#define DEFAULT_BZ2_PRESET 9
+#define DEFAULTS_LZMA_PRESET 6
 
 extern int bz2_preset;
 extern int lzma_preset;
