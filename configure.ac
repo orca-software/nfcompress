@@ -7,7 +7,9 @@ AC_CONFIG_FILES([
  Makefile
  src/Makefile
  doc/Makefile
+ test/Makefile
 ])
+AC_CONFIG_FILES([test/test.sh], [chmod +x test/test.sh])
 AC_CHECK_LIB(lzo2, lzo1x_1_compress, [], [AC_MSG_ERROR([Unable to find LZO library])])
 AC_CHECK_LIB(bz2, BZ2_bzBuffToBuffCompress, [], [AC_MSG_ERROR([Unable to find BZ2 library])])
 AC_CHECK_LIB(lz4, LZ4_compress_default)

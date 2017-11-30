@@ -1,0 +1,25 @@
+#!/bin/sh
+
+orig="@top_srcdir@/test/nfcapd.test"
+tmp=nfcapd.test.temp
+tool=../src/nfrecompress
+
+
+cp "$orig" $tmp
+
+fail () {
+  echo $1 >&2
+  exit 1
+}
+
+# Reading a non existent file should fail
+$tool -c lzo nonexistent && fail "Failed to fail on non existent file"
+
+for cmp in lzo bz2 lz4 lzma; do
+  cp $tmp $tmp.$cmp
+  $tool -c $cmp $tmp.$cmp || fail "Failed to recompress $cmp"
+  diff $tmp $tmp.$cmp >/dev/null && fail "Failed to mismatch with original"
+  cp $tmp.$cmp $tmp.$cmp.none
+  $tool -c none $tmp.$cmp.none || fail "Failed to recompress none"
+  diff $tmp $tmp.$cmp.none >/dev/null || fail "Failed to match with original"
+done

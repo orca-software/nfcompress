@@ -1,12 +1,15 @@
 #if HAVE_DOXYGEN
 
-directory = $(top_srcdir)/doc/html
+directory = $(top_srcdir)/doc
 
-$(directory): Doxyfile
+$(directory)/html: Doxyfile
 	$(DOXYGEN) Doxyfile
 
-all-local: $(directory)
+all-local: $(directory)/html
+
 clean-local:
-	rm -rf $(directory)
+	rm -rf $(directory)/html
+	rm -rf $(directory)/man
+	rm -rf $(directory)/xml
 
 #endif
