@@ -81,6 +81,7 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  int result = 0;
   for (int i = optind; i < argc; ++i) {
     char *filename = argv[i];
 #ifndef _OPENMP
@@ -119,13 +120,18 @@ int main(int argc, char* argv[])
         break;
       default:
         msg(log_error, "Unexpected compression method");
-        return -1;
+        result = -1;
     }
-    if (save(filename, fl) != 0) {
+    if (blocks_status(fl) < 0) {
+      msg(log_error, "One or more blocks have an invalid status\n");
+      result = -1;
+    }
+    else if (save(filename, fl) != 0) {
       msg(log_error, "Failed to save file: %s\n", filename);
+      result = -1;
     }
     free_file(fl);
   }
   msg(log_info, "Done\n");
-  return 0;
+  return result;
 }

@@ -16,8 +16,7 @@
 #include "types.h"
 #include "utils.h"
 
-void read_block(FILE *f, nf_block_t* block)
-{
+int read_block(FILE *f, nf_block_t* block) {
   size_t bytes_read = fread(&block->header, 1, sizeof(block->header), f);
   if (bytes_read != sizeof(block->header)) {
     msg(log_error, "Failed to read block header\n");
@@ -34,17 +33,17 @@ void read_block(FILE *f, nf_block_t* block)
     goto failure;
   }
   block->status = 0;
-  return;
+  return 0;
 failure:
   free(block->data);
   block->data = NULL;
   block->header.size = 0;
   block->status = -1;
+  return -1;
 }
 
 
-int write_block(FILE *f, nf_block_t* block)
-{
+int write_block(FILE *f, nf_block_t* block) {
   if (block->status != 0) {
     msg(log_error, "Invalid block\n");
     goto failure;
@@ -65,8 +64,7 @@ failure:
 }
 
 
-void for_each_block(nf_file_t* fl, block_handler_p handle_block)
-{
+void for_each_block(nf_file_t* fl, block_handler_p handle_block) {
   #pragma omp parallel for
   for (int i = 0; i < fl->header.NumBlocks; ++i) {
     handle_block(i, &fl->blocks[i]);
@@ -74,8 +72,17 @@ void for_each_block(nf_file_t* fl, block_handler_p handle_block)
 }
 
 
-nf_file_t* load(const char* filename, block_handler_p handle_block)
-{
+int blocks_status(nf_file_t* fl) {
+  int result = 0;
+  for (int i = 0; i < fl->header.NumBlocks; ++i) {
+    if (fl->blocks[i].status < result) 
+      result = fl->blocks[i].status;
+  }
+  return result;
+}
+
+
+nf_file_t* load(const char* filename, block_handler_p handle_block) {
   nf_file_t* fl = (nf_file_t*)malloc(sizeof(nf_file_t));
   if (fl == NULL) {
     msg(log_error, "Failed to allocate file buffer\n");
@@ -133,6 +140,11 @@ nf_file_t* load(const char* filename, block_handler_p handle_block)
     }
   }
 
+  if (blocks_status(fl) < 0) {
+    msg(log_error, "One or more blocks failed to load properly\n");
+    goto cleanup_file;
+  }
+
   fclose(f);
   return fl;
 cleanup_file:
@@ -143,8 +155,7 @@ cleanup_result:
 }
 
 
-int save(const char* filename, nf_file_t* fl)
-{
+int save(const char* filename, nf_file_t* fl) {
   msg(log_info, "Writing %s\n", filename);
 
   if (fl->header.NumBlocks == 0) {
