@@ -10,6 +10,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <lzo/lzo1x.h>
 #include <bzlib.h>
@@ -28,6 +29,7 @@
 #include "utils.h"
 #include "compress.h"
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
 
 int bz2_preset = DEFAULT_BZ2_PRESET;
 int lzma_preset = DEFAULT_LZMA_PRESET;
@@ -46,6 +48,9 @@ typedef struct {
 
 
 int compress_none(const char* source, const size_t source_len, char* target, size_t* target_len) {
+  size_t len = min(source_len, *target_len);
+  memcpy(target, source, len);
+  *target_len = len;
   return 0;
 }
 
@@ -102,6 +107,7 @@ int compress_lzma(const char* source, const size_t source_len, char* target, siz
       &target_pos,
       *target_len);
   *target_len = target_pos;
+  return result;
 #else
   msg(log_error, "LZMA support is not compiled in.\n");
   return -1;
@@ -110,7 +116,7 @@ int compress_lzma(const char* source, const size_t source_len, char* target, siz
 
 
 size_t compress_max_size_none(const size_t uncompressed_size) {
-  return 0;
+  return uncompressed_size;
 }
 
 
@@ -135,6 +141,9 @@ size_t compress_max_size_lzma(const size_t uncompressed_size) {
 
 
 int decompress_none(const char* source, const size_t source_len, char* target, size_t* target_len) {
+  size_t len = min(source_len, *target_len);
+  memcpy(target, source, len);
+  *target_len = len;
   return 0;
 }
 
@@ -181,7 +190,7 @@ int decompress_lz4(const char* source, const size_t source_len, char* target, si
 
 int decompress_lzma(const char* source, const size_t source_len, char* target, size_t* target_len) {
 #ifdef HAVE_LIBLZMA
-  static uint64_t mem_limit = 0x04000000;
+  uint64_t mem_limit = 0x04000000;
   size_t source_pos = 0, target_pos = 0;
   int result = lzma_stream_buffer_decode(
       &mem_limit,  // Max memory to be used
@@ -205,7 +214,7 @@ int decompress_lzma(const char* source, const size_t source_len, char* target, s
 
 
 size_t decompress_suggested_size_none(const size_t compressed_size) {
-  return 0;
+  return compressed_size;
 }
 
 
@@ -274,14 +283,14 @@ int compress(nf_block_t* block, compression_t compression) {
       buffer,
       &buffer_size);
   if (result != compress_funs_list[compression].ok_result) {
-    msg(log_error, "Failure with %s compression: %d\n", compress_funs_list[compression].name, result);
+    msg(log_error, "%s compression error: %d\n", compress_funs_list[compression].name, result);
     goto failure;
   }
   // Shrink buffer to compressed size
   buffer = (char*)realloc(buffer, buffer_size);
   // .. shouldn't really fail, but just in case
   if (buffer == NULL) {
-    msg(log_error, "Failed to shrink compression buffer");
+    msg(log_error, "Failed to shrink compression buffer\n");
     goto failure;
   }
   free(block->data);
@@ -303,6 +312,11 @@ int decompress(nf_block_t* block) {
   }
 
   compression_t compression = block->compression;
+  if (compression == compressed_none) {
+    // The block is already decompressed
+    return 0;
+  }
+
   size_t size = block->header.size;
   size_t buffer_size = decompress_funs_list[compression].size(size);
   char* buffer = (char*)malloc(buffer_size);
@@ -322,7 +336,7 @@ int decompress(nf_block_t* block) {
       buffer_size *= 2;
       char* new_buffer = (char*)realloc(buffer, buffer_size);
       if (new_buffer == NULL) {
-        msg(log_error, "Failed to grow decompression buffer");
+        msg(log_error, "Failed to grow decompression buffer\n");
         goto failure;
       }
       buffer = new_buffer;
@@ -336,7 +350,7 @@ int decompress(nf_block_t* block) {
   buffer = (char*)realloc(buffer, buffer_size);
   // .. shouldn't really fail, but just in case
   if (buffer == NULL) {
-    msg(log_error, "Failed to shrink decompression buffer");
+    msg(log_error, "Failed to shrink decompression buffer\n");
     goto failure;
   }
   // Free the original compressed data and update the block with
