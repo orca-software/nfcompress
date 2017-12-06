@@ -19,7 +19,9 @@
 int read_block(FILE *f, nf_block_t* block) {
   size_t bytes_read = fread(&block->header, 1, sizeof(block->header), f);
   if (bytes_read != sizeof(block->header)) {
-    msg(log_error, "Failed to read block header\n");
+    // Only whine when not immediately at end of file. 
+    if (bytes_read != 0)
+      msg(log_error, "Failed to read block header\n");
     goto failure;
   }
   block->data = (char*)malloc(block->header.size);
