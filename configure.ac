@@ -1,4 +1,4 @@
-AC_INIT([nfcompress], [1.0], [j.r.versteegh@orca-st.com])
+AC_INIT([nfcompress], [1.0.0], [j.r.versteegh@orca-st.com])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_PROG_CC
 AC_PROG_CC_STDC
