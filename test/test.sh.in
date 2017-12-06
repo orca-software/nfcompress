@@ -14,24 +14,27 @@ fail () {
   exit 1
 }
 
+umask 022
 # Reading a non existent file should fail
 $tool -c lzo nonexistent && fail "Failed to fail on non existent file"
 
 # File with invalid number of blocks listed in header (created by nfpcapd)
 # should be fixed by nfrecompress
 cp "$orig1" $tmp
+chmod +w $tmp
 cp $tmp $tmp.temp
-$tool -c none $tmp.temp || "Failed to recompress $test1"
+$tool -c none $tmp.temp || fail "Failed to recompress $tmp.temp"
 diff $tmp.temp $tmp >/dev/null && fail "Failed to mismatch with original"
 
 cp "$orig2" $tmp
+chmod +w $tmp
 # Compress and decompress and compare the result with original
 for cmp in lzo bz2 lz4 lzma; do
   cp $tmp $tmp.$cmp
   $tool -c $cmp $tmp.$cmp || fail "Failed to recompress $cmp"
   diff $tmp $tmp.$cmp >/dev/null && fail "Failed to mismatch with original"
   # nfdump (currently) only supports lzo and bz2
-  if [ x$cmp == xlzo ] || [ x$cmp == xbz2 ]; then
+  if [ "x$cmp" = "xlzo" ] || [ "x$cmp" = "xbz2" ]; then
     $dump $tmp | grep ^20 > $tmp.dump
     $dump $tmp.$cmp | grep ^20 > $tmp.$cmp.dump
     diff $tmp.dump $tmp.$cmp.dump >/dev/null || fail "Failed to match dump output with original"
