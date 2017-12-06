@@ -6,3 +6,6 @@ EXTRA_DIST = $(check_DATA)
 
 .PHONY: test
 test: check
+
+clean-local:
+	rm -f test.temp*

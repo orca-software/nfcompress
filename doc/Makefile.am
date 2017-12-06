@@ -2,14 +2,14 @@
 
 directory = $(top_srcdir)/doc
 
-$(directory)/html: Doxyfile
+html_doc: Doxyfile
 	$(DOXYGEN) Doxyfile
 
-all-local: $(directory)/html
+all-local: html_doc
 
 clean-local:
-	rm -rf $(directory)/html
-	rm -rf $(directory)/man
-	rm -rf $(directory)/xml
+	rm -rf html
+	rm -rf man
+	rm -rf xml
 
 #endif
