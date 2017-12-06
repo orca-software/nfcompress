@@ -26,3 +26,4 @@
 /doc/man/
 /doc/xml/
 /test-driver
+/test/Makefile.in
