@@ -107,16 +107,18 @@ typedef struct {
   compression_t compression;
   char* data;
 } nf_block_t;
+typedef nf_block_t* nf_block_p;
 
 
-typedef void (*block_handler_p) (const int blocknum, nf_block_t* block);
+typedef void (*block_handler_p) (const int, nf_block_p);
   
 
 typedef struct {
   file_header_t header;
   stat_record_t stats;
-  nf_block_t blocks[];
+  nf_block_p blocks[];
 } nf_file_t;
+typedef nf_file_t* nf_file_p;
 
 #endif
 

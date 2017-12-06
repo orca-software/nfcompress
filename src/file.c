@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "types.h"
 #include "utils.h"
+#include "file.h"
 
 int read_block(FILE *f, nf_block_t* block) {
   size_t bytes_read = fread(&block->header, 1, sizeof(block->header), f);
@@ -64,26 +64,26 @@ failure:
 }
 
 
-void for_each_block(nf_file_t* fl, block_handler_p handle_block) {
+void for_each_block(nf_file_p fl, block_handler_p handle_block) {
   #pragma omp parallel for
   for (int i = 0; i < fl->header.NumBlocks; ++i) {
-    handle_block(i, &fl->blocks[i]);
+    handle_block(i, fl->blocks[i]);
   }
 }
 
 
-int blocks_status(nf_file_t* fl) {
+int blocks_status(nf_file_p fl) {
   int result = 0;
   for (int i = 0; i < fl->header.NumBlocks; ++i) {
-    if (fl->blocks[i].status < result) 
-      result = fl->blocks[i].status;
+    if (fl->blocks[i]->status < result) 
+      result = fl->blocks[i]->status;
   }
   return result;
 }
 
 
 nf_file_t* load(const char* filename, block_handler_p handle_block) {
-  nf_file_t* fl = (nf_file_t*)malloc(sizeof(nf_file_t));
+  nf_file_p fl = (nf_file_p)malloc(sizeof(nf_file_t));
   if (fl == NULL) {
     msg(log_error, "Failed to allocate file buffer\n");
     return NULL;
@@ -94,29 +94,29 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
   FILE *f = fopen(filename, "rb");
   if (!f) {
     msg(log_error, "Failed to open: %s\n", filename);
-    goto cleanup_result;
+    goto failure;
   }
 
   size_t bytes_read = fread(&fl->header, 1, sizeof(fl->header), f);
   if (bytes_read != sizeof(fl->header)) {
     msg(log_error, "Failed to read file header\n");
-    goto cleanup_file;
+    goto failure;
   }
   msg(log_debug, "Read file header\n");
 
   bytes_read = fread(&fl->stats, 1, sizeof(fl->stats), f);
   if (bytes_read != sizeof(fl->stats)) {
     msg(log_error, "Failed to read file stats\n");
-    goto cleanup_file;
+    goto failure;
   }
 
   msg(log_debug, "Read file stats\n");
 
-  size_t blocks_size = fl->header.NumBlocks * sizeof(nf_block_t);
-  nf_file_t* new_fl = (nf_file_t*)realloc(fl, sizeof(nf_file_t) + blocks_size);
+  size_t blocks_size = fl->header.NumBlocks * sizeof(nf_block_p);
+  nf_file_p new_fl = (nf_file_p)realloc(fl, sizeof(nf_file_t) + blocks_size);
   if (new_fl == NULL) {
-    msg(log_error, "Failed to re-allocate file bufferi\n");
-    goto cleanup_file;
+    msg(log_error, "Failed to re-allocate file buffer\n");
+    goto failure;
   }
   fl = new_fl;
   memset(&fl->blocks, 0, blocks_size);
@@ -127,30 +127,57 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
       fl->header.flags & FLAG_LZ4_COMPRESSED ? compressed_lz4 :
       fl->header.flags & FLAG_LZMA_COMPRESSED ? compressed_lzma :
         compressed_none;
-  msg(log_info, "File compression: %d  flags:%u\n", file_compression, fl->header.flags);
+  msg(log_info, "File compression: %d  flags: %u\n", file_compression, fl->header.flags);
 
+  int blocks_read = 0;
   #pragma omp parallel
   #pragma omp master
-  for (int i = 0; i < fl->header.NumBlocks; ++i) {
-    read_block(f, &fl->blocks[i]);
-    fl->blocks[i].compression = file_compression;
-    if (handle_block != NULL) {
-      #pragma omp task
-      handle_block(i, &fl->blocks[i]);
+  for (;;) {
+    nf_block_p block = (nf_block_p)calloc(1, sizeof(nf_block_t));
+    if (block == NULL) {
+      msg(log_error, "Failed to allocate block buffer\n");
+      break;
     }
+    if (read_block(f, block) != 0) {
+      free(block);
+      break;
+    }
+    int block_idx = blocks_read++;
+    if (blocks_read > fl->header.NumBlocks) {
+      blocks_size = blocks_read * sizeof(nf_block_p);
+      new_fl = (nf_file_p)realloc(fl, sizeof(nf_file_t) + blocks_size);
+      if (new_fl == NULL) {
+        msg(log_error, "Failed to re-allocate file buffer\n");
+        break;
+      }
+      fl = new_fl;
+      msg(log_info, "Fixed block count in header. found %d, header %d\n", blocks_read, fl->header.NumBlocks);
+      fl->header.NumBlocks = blocks_read;
+    }
+    fl->blocks[block_idx] = block;
+    block->compression = file_compression;
+    if (handle_block != NULL) {
+      #pragma omp task firstprivate(block_idx, block)
+      handle_block(block_idx, block);
+    }
+  }
+
+  if (blocks_read < fl->header.NumBlocks) {
+    msg(log_error, "Missing blocks in file. found %d, expected %d\n", blocks_read, fl->header.NumBlocks);
+    goto failure;
   }
 
   if (blocks_status(fl) < 0) {
     msg(log_error, "One or more blocks failed to load properly\n");
-    goto cleanup_file;
+    goto failure;
   }
 
   fclose(f);
   return fl;
-cleanup_file:
-  fclose(f);
-cleanup_result:
-  free(fl);
+failure:
+  if (f)
+    fclose(f);
+  free_file(fl);
   return NULL;
 }
 
@@ -163,7 +190,7 @@ int save(const char* filename, nf_file_t* fl) {
     return -1;
   }
 
-  compression_t file_compression = fl->blocks[0].compression;
+  compression_t file_compression = fl->blocks[0]->compression;
   // Switch of all compression flags
   for (compression_t cmpr = compressed_none; cmpr < compressed_term; ++cmpr) {
     fl->header.flags &= ~compression_flags[cmpr];
@@ -193,7 +220,7 @@ int save(const char* filename, nf_file_t* fl) {
   msg(log_debug, "Written file stats\n");
 
   for (int i = 0; i < fl->header.NumBlocks; ++i) {
-    int result = write_block(f, &fl->blocks[i]);
+    int result = write_block(f, fl->blocks[i]);
     if (result != 0) 
       goto failure;
   }
@@ -204,13 +231,12 @@ failure:
   return -1;
 }
 
-void free_block(int blocknum, nf_block_t* block) {
+void free_block(int blocknum, nf_block_p block) {
   free(block->data);
-  block->data = NULL;
-  block->header.size = 0;
+  free(block);
 }
 
-void free_file(nf_file_t* fl) {
+void free_file(nf_file_p fl) {
   for_each_block(fl, &free_block);
   free(fl);
 }

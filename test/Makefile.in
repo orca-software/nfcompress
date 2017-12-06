@@ -409,7 +409,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-check_DATA = nfcapd.test
+check_DATA = nfcapd.test1 nfcapd.test2
 check_SCRIPTS = test.sh
 TESTS = test.sh
 all: all-am

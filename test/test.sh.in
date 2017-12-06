@@ -1,11 +1,13 @@
 #!/bin/sh
 
-orig="@top_srcdir@/test/nfcapd.test"
-tmp=nfcapd.test.temp
+test1=nfcapd.test1
+test2=nfcapd.test2
+orig1="@top_srcdir@/test/$test1"
+orig2="@top_srcdir@/test/$test2"
+tmp=test.temp
 tool=../src/nfrecompress
+dump="nfdump -r"
 
-
-cp "$orig" $tmp
 
 fail () {
   echo $1 >&2
@@ -15,10 +17,25 @@ fail () {
 # Reading a non existent file should fail
 $tool -c lzo nonexistent && fail "Failed to fail on non existent file"
 
+# File with invalid number of blocks listed in header (created by nfpcapd)
+# should be fixed by nfrecompress
+cp "$orig1" $tmp
+cp $tmp $tmp.temp
+$tool -c none $tmp.temp || "Failed to recompress $test1"
+diff $tmp.temp $tmp >/dev/null && fail "Failed to mismatch with original"
+
+cp "$orig2" $tmp
+# Compress and decompress and compare the result with original
 for cmp in lzo bz2 lz4 lzma; do
   cp $tmp $tmp.$cmp
   $tool -c $cmp $tmp.$cmp || fail "Failed to recompress $cmp"
   diff $tmp $tmp.$cmp >/dev/null && fail "Failed to mismatch with original"
+  # nfdump (currently) only supports lzo and bz2
+  if [ x$cmp == xlzo ] || [ x$cmp == xbz2 ]; then
+    $dump $tmp | grep ^20 > $tmp.dump
+    $dump $tmp.$cmp | grep ^20 > $tmp.$cmp.dump
+    diff $tmp.dump $tmp.$cmp.dump >/dev/null || fail "Failed to match dump output with original"
+  fi
   cp $tmp.$cmp $tmp.$cmp.none
   $tool -c none $tmp.$cmp.none || fail "Failed to recompress none"
   diff $tmp $tmp.$cmp.none >/dev/null || fail "Failed to match with original"
