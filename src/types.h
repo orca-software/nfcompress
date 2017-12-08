@@ -27,6 +27,7 @@ typedef struct file_header_s {
 
 	uint16_t	version;			// version of binary file layout, incl. magic
 #define LAYOUT_VERSION_1	1
+#define LAYOUT_VERSION_2	2
 
 	uint32_t	flags;				
 #define NUM_FLAGS		4
@@ -75,6 +76,10 @@ typedef struct data_block_header_s {
 	uint32_t	NumRecords;		// number of data records in data block
 	uint32_t	size;			// size of this block in bytes without this header
 	uint16_t	id;				// Block ID == DATA_BLOCK_TYPE_2
+#define DATA_BLOCK_TYPE_1       1
+#define DATA_BLOCK_TYPE_2       2
+#define Large_BLOCK_Type        3
+#define CATALOG_BLOCK           4
 	uint16_t	flags;			// 0 - compatibility
 								// 1 - block uncompressed
 								// 2 - block compressed

@@ -265,9 +265,17 @@ int compress(nf_block_t* block, compression_t compression) {
     msg(log_error, "Block is already compressed\n");
     return -1;
   }
-  if (compression <= compressed_none || compression >= compressed_term) {
+  if (compression < compressed_none || compression >= compressed_term) {
     msg(log_error, "Unknown compression method: %d\n", compression);
     return -1;
+  }
+  if (compression == compressed_none) {
+    // Nothing to be done
+    return 0;
+  }
+  if (block->header.id == CATALOG_BLOCK) {
+    // Catalog blocks should not be compressed
+    return 0;
   }
 
   size_t size = block->header.size;

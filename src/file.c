@@ -157,7 +157,8 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
       fl->header.NumBlocks = blocks_read;
     }
     fl->blocks[block_idx] = block;
-    block->compression = file_compression;
+    // Catalog blocks are not compressed
+    block->compression = block->header.id == CATALOG_BLOCK ? compressed_none : file_compression;
     if (handle_block != NULL) {
       #pragma omp task firstprivate(block_idx, block)
       handle_block(block_idx, block);
