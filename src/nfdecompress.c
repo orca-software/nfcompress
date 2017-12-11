@@ -9,7 +9,7 @@
 int main(int argc, char* argv[])
 {
   if (argc < 2) {
-    msg(log_error, "Usage: nfdecompress <lzo compressed file>\n");
+    msg(log_error, "Usage: nfdecompress <nfdump file(s)>\n");
     return -1;
   }
 
