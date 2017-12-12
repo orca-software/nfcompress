@@ -1,15 +1,24 @@
-#if HAVE_DOXYGEN
-
 directory = $(top_srcdir)/doc
 
-html_doc: Doxyfile
-	$(DOXYGEN) Doxyfile
+if HAVE_DOXYGEN
 
-all-local: html_doc
+doxygen-build.stamp: Doxyfile
+	$(DOXYGEN) Doxyfile
+	touch $@
+
+else
+
+doxygen-build.stamp:
+	@echo "*** Doxygen not found. Documentation will not be build."
+	touch $@
+
+endif
+
+all-local: doxygen-build.stamp
 
 clean-local:
+	rm -f doxygen-build.stamp
 	rm -rf html
 	rm -rf man
 	rm -rf xml
 
-#endif
