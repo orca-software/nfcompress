@@ -13,16 +13,25 @@
 #include <string.h>
 
 #include <lzo/lzo1x.h>
-#include <bzlib.h>
 
 #include "config.h"
 
+#ifdef HAVE_LIBBZ2
+#include <bzlib.h>
+#else
+#define BZ_OK 0
+#define BZ_OUTBUFF_FULL (-8)
+#endif
+
 #ifdef HAVE_LIBLZ4
-  #include <lz4.h>
+#include <lz4.h>
 #endif
 
 #ifdef HAVE_LIBLZMA
-  #include <lzma.h>
+#include <lzma.h>
+#else
+#define LZMA_OK 0
+#define LZMA_BUF_ERROR 10
 #endif
 
 #include "types.h"
@@ -68,6 +77,7 @@ int compress_lzo(const char* source, const size_t source_len, char* target, size
 
 
 int compress_bz2(const char* source, const size_t source_len, char* target, size_t* target_len) {
+#ifdef HAVE_LIBBZ2
   return BZ2_bzBuffToBuffCompress(
       target,
       (unsigned int*)target_len,
@@ -76,6 +86,10 @@ int compress_bz2(const char* source, const size_t source_len, char* target, size
       bz2_preset,  // * 100k: block size
       0,           // verbosity: be quiet
       30);         // workFactor, threshold for fallback to alt algo: defaults to 30
+#else
+  msg(log_error, "BZ2 support is not compiled in.\n");
+  return -1;
+#endif
 }
 
 
@@ -131,12 +145,20 @@ size_t compress_max_size_bz2(const size_t uncompressed_size) {
 
 
 size_t compress_max_size_lz4(const size_t uncompressed_size) {
+#ifdef HAVE_LIBLZ4
   return LZ4_compressBound(uncompressed_size);
+#else
+  return uncompressed_size;
+#endif
 }
  
 
 size_t compress_max_size_lzma(const size_t uncompressed_size) {
+#ifdef HAVE_LIBLZMA
   return lzma_stream_buffer_bound(uncompressed_size);
+#else
+  return uncompressed_size;
+#endif
 }
 
 
@@ -159,6 +181,7 @@ int decompress_lzo(const char* source, const size_t source_len, char* target, si
 
 
 int decompress_bz2(const char* source, const size_t source_len, char* target, size_t* target_len) {
+#ifdef HAVE_LIBBZ2
   return BZ2_bzBuffToBuffDecompress(
       target,
       (unsigned int*)target_len,
@@ -166,6 +189,10 @@ int decompress_bz2(const char* source, const size_t source_len, char* target, si
       source_len,
       0,  // verbosity: be quiet
       0); // "small" for small memories, we don't expect to have that
+#else
+  msg(log_error, "BZ2 support is not compiled in.\n");
+  return -1;
+#endif
 }
 
 
@@ -269,6 +296,9 @@ int compress(nf_block_t* block, compression_t compression) {
     msg(log_error, "Unknown compression method: %d\n", compression);
     return -1;
   }
+  size_t size = block->header.size;
+  block->compressed_size = size;
+  block->uncompressed_size = size;
   if (compression == compressed_none) {
     // Nothing to be done
     return 0;
@@ -277,8 +307,6 @@ int compress(nf_block_t* block, compression_t compression) {
     // Catalog blocks should not be compressed
     return 0;
   }
-
-  size_t size = block->header.size;
   size_t buffer_size = compress_funs_list[compression].size(size);
   char* buffer = (char*)malloc(buffer_size);
   if (buffer == NULL) {
@@ -303,6 +331,7 @@ int compress(nf_block_t* block, compression_t compression) {
   }
   free(block->data);
   block->header.size = buffer_size;
+  block->compressed_size = buffer_size;
   block->compression = compression;
   block->data = buffer;
   return 0;
@@ -319,13 +348,16 @@ int decompress(nf_block_t* block) {
     return -1;
   }
 
+  size_t size = block->header.size;
+  block->compressed_size = size;
+  block->uncompressed_size = size;
+
   compression_t compression = block->compression;
   if (compression == compressed_none) {
     // The block is already decompressed
     return 0;
   }
 
-  size_t size = block->header.size;
   size_t buffer_size = decompress_funs_list[compression].size(size);
   char* buffer = (char*)malloc(buffer_size);
   if (buffer == NULL) {
@@ -365,6 +397,7 @@ int decompress(nf_block_t* block) {
   // the new decompressed data
   free(block->data);
   block->header.size = buffer_size;
+  block->uncompressed_size = buffer_size;
   block->compression = compressed_none;
   block->data = buffer;
   return 0;

@@ -14,26 +14,27 @@ AC_CONFIG_FILES([
 AC_CONFIG_FILES([test/test.sh], [chmod +x test/test.sh])
 
 AC_CHECK_LIB(
-  lzo2, 
-  lzo1x_1_compress, 
-  [], 
+  lzo2,
+  lzo1x_1_compress,
+  [],
   [AC_MSG_ERROR([Unable to find LZO library])]
 )
 AC_CHECK_LIB(
-  bz2, 
-  BZ2_bzBuffToBuffCompress, 
-  [], 
-  [AC_MSG_ERROR([Unable to find BZ2 library])])
+  bz2,
+  BZ2_bzBuffToBuffCompress,
+  [],
+  [AC_MSG_WARN([BZ2 library not found. BZ2 (de)compression will not be available])]
+)
 AC_CHECK_LIB(
-  lz4, 
-  LZ4_compress_default, 
-  [], 
+  lz4,
+  LZ4_compress_default,
+  [],
   [AC_MSG_WARN([LZ4 library not found. LZ4 (de)compression will not be available])]
 )
 AC_CHECK_LIB(
-  lzma, 
-  lzma_easy_buffer_encode, 
-  [], 
+  lzma,
+  lzma_easy_buffer_encode,
+  [],
   [AC_MSG_WARN([LZMA library not found. LZMA (de)compression will not be available])]
 )
 
