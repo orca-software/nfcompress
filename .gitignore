@@ -27,3 +27,5 @@
 /doc/xml/
 /test-driver
 /test/Makefile.in
+/test/Makefile
+/test/test.sh
