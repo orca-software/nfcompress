@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     for_each_block(fl, &decompressor);
 #endif
     for (int j = 0; j < fl->header.NumBlocks; ++j) {
-      fwrite(fl->blocks[i]->data, 1, fl->blocks[i]->header.size, stdout);
+      fwrite(fl->blocks[j]->data, 1, fl->blocks[j]->header.size, stdout);
     }
   }
   msg(log_debug, "Done\n");
