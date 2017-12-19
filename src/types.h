@@ -110,6 +110,8 @@ typedef struct {
   int status;
   data_block_header_t header;
   compression_t compression;
+  size_t compressed_size;
+  size_t uncompressed_size;
   char* data;
 } nf_block_t;
 typedef nf_block_t* nf_block_p;
