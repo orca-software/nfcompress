@@ -23,12 +23,12 @@ void msg(log_level_t log_level, const char *message, ...)
     case (log_debug):
 #ifdef DEBUG
       #pragma omp critical
-      vprintf(message, args);
+      vfprintf(stderr, message, args);
 #endif
       break;
     case (log_info):
       #pragma omp critical
-      vprintf(message, args);
+      vfprintf(stderr, message, args);
       break;
     case (log_error):
       #pragma omp critical
