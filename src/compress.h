@@ -30,5 +30,16 @@ extern void bz2_compressor(const int blocknum, nf_block_t* block);
 extern void lz4_compressor(const int blocknum, nf_block_t* block);
 extern void lzma_compressor(const int blocknum, nf_block_t* block);
 
+typedef int (*transform_fun_p) (const char*, const size_t, char*, size_t*);
+typedef size_t (*size_fun_p) (const size_t);
+typedef struct {
+  transform_fun_p transform;
+  size_fun_p size;
+  const char* name;
+  const int ok_result;
+  const int buffer_error;
+} transform_funs_t;
+extern const transform_funs_t compress_funs_list[];
+
 #endif
 

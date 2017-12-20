@@ -19,12 +19,14 @@
 /stamp-h1
 /src/nfdecompress
 /src/nfrecompress
+/src/nffileinfo
 /doc/Doxyfile
 /doc/Makefile
 /doc/Makefile.in
 /doc/html/
 /doc/man/
 /doc/xml/
+/doc/doxygen-build.stamp
 /test-driver
 /test/Makefile.in
 /test/Makefile

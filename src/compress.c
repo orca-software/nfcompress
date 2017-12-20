@@ -44,17 +44,6 @@ int bz2_preset = DEFAULT_BZ2_PRESET;
 int lzma_preset = DEFAULT_LZMA_PRESET;
 
 
-typedef int (*transform_fun_p) (const char*, const size_t, char*, size_t*);
-typedef size_t (*size_fun_p) (const size_t);
-typedef struct {
-  transform_fun_p transform;
-  size_fun_p size;
-  const char* name;
-  const int ok_result;
-  const int buffer_error;
-} transform_funs_t;
-
-
 
 int compress_none(const char* source, const size_t source_len, char* target, size_t* target_len) {
   size_t len = min(source_len, *target_len);
@@ -265,7 +254,7 @@ size_t decompress_suggested_size_lzma(const size_t compressed_size) {
 }
 
 
-static const transform_funs_t compress_funs_list[] = {
+const transform_funs_t compress_funs_list[] = {
   {&compress_none, &compress_max_size_none, "None", 0},
   {&compress_lzo, &compress_max_size_lzo, "LZO", LZO_E_OK},
   {&compress_bz2, &compress_max_size_bz2, "BZ2", BZ_OK},
@@ -287,26 +276,28 @@ int compress(nf_block_t* block, compression_t compression) {
     msg(log_error, "Block has no data\n");
     return -1;
   }
+
   // Expected decompressed block
   if (block->compression != compressed_none) {
     msg(log_error, "Block is already compressed\n");
     return -1;
   }
+
   if (compression < compressed_none || compression >= compressed_term) {
     msg(log_error, "Unknown compression method: %d\n", compression);
     return -1;
   }
-  size_t size = block->header.size;
-  block->compressed_size = size;
-  block->uncompressed_size = size;
+
   if (compression == compressed_none) {
     // Nothing to be done
     return 0;
   }
+
   if (block->header.id == CATALOG_BLOCK) {
     // Catalog blocks should not be compressed
     return 0;
   }
+  size_t size = block->header.size;
   size_t buffer_size = compress_funs_list[compression].size(size);
   char* buffer = (char*)malloc(buffer_size);
   if (buffer == NULL) {
@@ -348,16 +339,13 @@ int decompress(nf_block_t* block) {
     return -1;
   }
 
-  size_t size = block->header.size;
-  block->compressed_size = size;
-  block->uncompressed_size = size;
-
   compression_t compression = block->compression;
   if (compression == compressed_none) {
     // The block is already decompressed
     return 0;
   }
 
+  size_t size = block->header.size;
   size_t buffer_size = decompress_funs_list[compression].size(size);
   char* buffer = (char*)malloc(buffer_size);
   if (buffer == NULL) {

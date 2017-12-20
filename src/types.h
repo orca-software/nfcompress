@@ -13,8 +13,6 @@
 #define _TYPES_H
 
 #include <stdint.h>
-
-// Include nffile for header, stat and block header structures
 #include <sys/types.h>
 
 // ** Defines and types from nffile.h
@@ -30,14 +28,13 @@ typedef struct file_header_s {
 #define LAYOUT_VERSION_2	2
 
 	uint32_t	flags;				
-#define NUM_FLAGS		4
-#define FLAG_NOT_COMPRESSED	0x0		// records are not compressed
-#define FLAG_LZO_COMPRESSED	0x1		// records are LZO compressed
-#define FLAG_ANONYMIZED 	0x2		// flow data are anonimized 
-#define FLAG_CATALOG		0x4		// has a file catalog record after stat record
-#define FLAG_BZ2_COMPRESSED 0x8		// records are BZ2 compressed
+#define FLAG_NOT_COMPRESSED	 0x0		// records are not compressed
+#define FLAG_LZO_COMPRESSED	 0x1		// records are LZO compressed
+#define FLAG_ANONYMIZED 	 0x2		// flow data are anonimized 
+#define FLAG_CATALOG		 0x4		// has a file catalog record after stat record
+#define FLAG_BZ2_COMPRESSED  0x8		// records are BZ2 compressed
 // New flags introduced
-#define FLAG_LZ4_COMPRESSED 0x10
+#define FLAG_LZ4_COMPRESSED  0x10
 #define FLAG_LZMA_COMPRESSED 0x20
 	uint32_t	NumBlocks;			// number of data blocks in file
 	char		ident[IDENTLEN];	// string identifier for this file
@@ -85,6 +82,26 @@ typedef struct data_block_header_s {
 								// 2 - block compressed
 } data_block_header_t;
 
+typedef struct L_record_header_s {
+    uint32_t    type;
+#define CommonRecordV0Type      1
+#define ExtensionMapType        2
+#define PortHistogramType       3
+#define BppHistogramType        4
+// TC code - phased out
+#define ExporterRecordType      5
+#define SamplerRecordype        6
+// replaces TC Types
+#define ExporterInfoRecordType  7
+#define ExporterStatRecordType  8
+#define SamplerInfoRecordype    9
+// new extended Common Record as intermediate solution to overcome 255 exporters
+// requires moderate changes till 1.7
+#define CommonRecordType       10
+
+    uint32_t    size;
+} L_record_header_t;
+
 // *** end of nffile.h defines and types
 
 typedef enum {
@@ -95,6 +112,7 @@ typedef enum {
   compressed_lzma,
   compressed_term // terminator: leave as last element
 } compression_t;
+
 
 static const uint32_t compression_flags[] = {
   0x0,
@@ -110,6 +128,7 @@ typedef struct {
   int status;
   data_block_header_t header;
   compression_t compression;
+  compression_t file_compression;
   size_t compressed_size;
   size_t uncompressed_size;
   char* data;
@@ -121,6 +140,7 @@ typedef void (*block_handler_p) (const int, nf_block_p);
   
 
 typedef struct {
+  size_t size;
   file_header_t header;
   stat_record_t stats;
   nf_block_p blocks[];

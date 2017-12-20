@@ -90,6 +90,7 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
     msg(log_error, "Failed to allocate file buffer\n");
     return NULL;
   }
+  fl->size = 0;
 
   msg(log_info, "Reading %s\n", filename);
 
@@ -159,6 +160,10 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
     fl->blocks[block_idx] = block;
     // Catalog blocks are not compressed
     block->compression = block->header.id == CATALOG_BLOCK ? compressed_none : file_compression;
+    block->file_compression = block->compression;
+    size_t size = block->header.size;
+    block->compressed_size = size;
+    block->uncompressed_size = size;
     if (handle_block != NULL) {
       #pragma omp task firstprivate(block_idx, block)
       handle_block(block_idx, block);
@@ -175,6 +180,7 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
     goto failure;
   }
 
+  fl->size = ftell(f);
   fclose(f);
   return fl;
 failure:

@@ -1,6 +1,7 @@
 This package contains two tools:
  * nfdecompress: decompresses netflow data in nfdump files to stdout
  * nfrecompress: recompressed nfdump files with an alternative compression method
+ * nffileinfo: print information about nfdump files to stdout
 
 Install with:
   ./bootstrap && ./configure && make && make install

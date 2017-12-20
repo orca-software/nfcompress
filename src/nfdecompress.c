@@ -18,6 +18,7 @@ int main(int argc, char* argv[])
 #ifdef _OPENMP
     nf_file_t* fl = load(filename, &decompressor);
 #else
+    // When not using OpenMP, it's faster to first read the whole file...
     nf_file_t* fl = load(filename, NULL);
 #endif
     if (fl == NULL) {
@@ -25,7 +26,12 @@ int main(int argc, char* argv[])
       return -1;
     }
 #ifndef _OPENMP
+    // ... and only then start decompressing the blocks in it.
     for_each_block(fl, &decompressor);
+    if (blocks_status(fl) < 0) {
+      msg(log_error, "One or more blocks have an invalid status\n");
+      return -1;
+    }
 #endif
     for (int j = 0; j < fl->header.NumBlocks; ++j) {
       fwrite(fl->blocks[j]->data, 1, fl->blocks[j]->header.size, stdout);
