@@ -114,38 +114,6 @@ typedef enum {
 } compression_t;
 
 
-static const uint32_t compression_flags[] = {
-  0x0,
-  FLAG_LZO_COMPRESSED,
-  FLAG_BZ2_COMPRESSED,
-  FLAG_LZ4_COMPRESSED,
-  FLAG_LZMA_COMPRESSED,
-  0 // terminator: leave as last element
-};
-
-
-typedef struct {
-  int status;
-  data_block_header_t header;
-  compression_t compression;
-  compression_t file_compression;
-  size_t compressed_size;
-  size_t uncompressed_size;
-  char* data;
-} nf_block_t;
-typedef nf_block_t* nf_block_p;
-
-
-typedef void (*block_handler_p) (const int, nf_block_p);
-  
-
-typedef struct {
-  size_t size;
-  file_header_t header;
-  stat_record_t stats;
-  nf_block_p blocks[];
-} nf_file_t;
-typedef nf_file_t* nf_file_p;
 
 #endif
 

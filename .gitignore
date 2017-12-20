@@ -31,3 +31,7 @@
 /test/Makefile.in
 /test/Makefile
 /test/test.sh
+/test/test-suite.log
+/test/test.sh.log
+/test/test.sh.trs
+/test/test.temp*

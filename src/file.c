@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "utils.h"
+#include "compress.h"
 #include "file.h"
 
 int read_block(FILE *f, nf_block_t* block) {
@@ -85,12 +86,11 @@ int blocks_status(nf_file_p fl) {
 
 
 nf_file_t* load(const char* filename, block_handler_p handle_block) {
-  nf_file_p fl = (nf_file_p)malloc(sizeof(nf_file_t));
+  nf_file_p fl = new_file();
   if (fl == NULL) {
     msg(log_error, "Failed to allocate file buffer\n");
     return NULL;
   }
-  fl->size = 0;
 
   msg(log_info, "Reading %s\n", filename);
 
@@ -136,7 +136,7 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
   #pragma omp parallel
   #pragma omp master
   for (;;) {
-    nf_block_p block = (nf_block_p)calloc(1, sizeof(nf_block_t));
+    nf_block_p block = new_block();
     if (block == NULL) {
       msg(log_error, "Failed to allocate block buffer\n");
       break;
@@ -186,7 +186,7 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
 failure:
   if (f)
     fclose(f);
-  free_file(fl);
+  free_file(&fl);
   return NULL;
 }
 
@@ -240,12 +240,23 @@ failure:
   return -1;
 }
 
-void free_block(int blocknum, nf_block_p block) {
-  free(block->data);
-  free(block);
+
+void handle_free_block(int blocknum, nf_block_p block) {
+  free_block(&block);
 }
 
-void free_file(nf_file_p fl) {
-  for_each_block(fl, &free_block);
+
+nf_file_p new_file()
+{
+  return (nf_file_p)calloc(1, sizeof(nf_file_t));
+}
+
+
+void free_file(nf_file_p *file) {
+  if (*file == NULL)
+    return;
+  nf_file_p fl = *file;
+  *file = NULL;
+  for_each_block(fl, &handle_free_block);
   free(fl);
 }

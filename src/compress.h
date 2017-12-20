@@ -12,7 +12,17 @@
 #ifndef _COMPRESS_H
 #define _COMPRESS_H
 
-#include "types.h"
+#include "block.h"
+
+
+static const uint32_t compression_flags[] = {
+  0x0,
+  FLAG_LZO_COMPRESSED,
+  FLAG_BZ2_COMPRESSED,
+  FLAG_LZ4_COMPRESSED,
+  FLAG_LZMA_COMPRESSED,
+  0 // terminator: leave as last element
+};
 
 #define DEFAULT_BZ2_PRESET 9
 #define DEFAULT_LZMA_PRESET 6

@@ -12,12 +12,22 @@
 #ifndef _FILE_H
 #define _FILE_H
 
-#include "types.h"
+#include "block.h"
+
+typedef struct {
+  size_t size;
+  file_header_t header;
+  stat_record_t stats;
+  nf_block_p blocks[];
+} nf_file_t;
+typedef nf_file_t* nf_file_p;
 
 extern nf_file_t* load(const char* filename, block_handler_p handle_block);
 extern int save(const char* filename, nf_file_t* fl);
 extern void for_each_block(nf_file_t* fl, block_handler_p handle_block);
 extern int blocks_status(nf_file_t* fl);
-extern void free_file(nf_file_p fl);
+
+extern nf_file_p new_file();
+extern void free_file(nf_file_p *fl);
 
 #endif

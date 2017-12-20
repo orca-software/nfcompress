@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
       msg(log_error, "Failed to save file: %s\n", filename);
       result = -1;
     }
-    free_file(fl);
+    free_file(&fl);
   }
   msg(log_info, "Done\n");
   return result;

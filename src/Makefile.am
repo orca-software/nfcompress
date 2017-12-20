@@ -1,5 +1,5 @@
-HDRS = types.h utils.h compress.h file.h
-SRCS = utils.c compress.c file.c
+HDRS = types.h utils.h compress.h file.h block.h
+SRCS = utils.c compress.c file.c block.c
 
 AM_CFLAGS = $(OPENMP_CFLAGS)
 
