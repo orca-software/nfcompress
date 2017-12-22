@@ -1,11 +1,11 @@
-/** 
+/**
  * \file block.h
  * \brief nfdump block parsing and handling functions
  *
  * \author J.R.Versteegh <j.r.versteegh@orca-st.com>
  *
  * \copyright (C) 2017 SURFnet. All rights reserved.
- * \license This software may be modified and distributed under the 
+ * \license This software may be modified and distributed under the
  * terms of the BSD license. See the LICENSE file for details.
  */
 
@@ -17,12 +17,14 @@
 
 
 typedef struct {
+  // Meta data
   int status;
-  data_block_header_t header;
-  compression_t compression;
-  compression_t file_compression;
   size_t compressed_size;
   size_t uncompressed_size;
+  compression_t compression;
+  compression_t file_compression;
+  // Data
+  data_block_header_t header;
   char* data;
   nf_record_p (*records)[];
 } nf_block_t;

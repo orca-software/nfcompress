@@ -1,14 +1,14 @@
-/** 
+/**
  * \file record.h
  * \brief nfdump record parsing and handling functions
  *
  * \author J.R.Versteegh <j.r.versteegh@orca-st.com>
  *
- * \copyright 
+ * \copyright
  * (C) 2017 Jaap Versteegh. All rights reserved.
  * (C) 2017 SURFnet. All rights reserved.
- * \license 
- * This software may be modified and distributed under the 
+ * \license
+ * This software may be modified and distributed under the
  * terms of the BSD license. See the LICENSE file for details.
  */
 

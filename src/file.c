@@ -1,11 +1,14 @@
-/** 
+/**
  * \file file.c
  * \brief nfdump file loading, handling and saving functions
  *
  * \author J.R.Versteegh <j.r.versteegh@orca-st.com>
  *
- * \copyright (C) 2017 SURFnet. All rights reserved.
- * \license This software may be modified and distributed under the 
+ * \copyright
+ * (C) 2017 Jaap Versteegh. All rights reserved.
+ * (C) 2017 SURFnet. All rights reserved.
+ * \license
+ * This software may be modified and distributed under the
  * terms of the BSD license. See the LICENSE file for details.
  */
 
@@ -17,6 +20,7 @@
 #include "compress.h"
 #include "file.h"
 
+// Private functions
 static int _read_block(FILE *f, nf_block_t* block);
 static int _write_block(FILE *f, nf_block_t* block);
 static int _blocks_status(const nf_file_p file);
@@ -68,7 +72,7 @@ nf_file_p file_load(const char* filename, block_handler_p handle_block) {
   memset(&fl->blocks, 0, blocks_size);
 
   compression_t file_compression =
-      fl->header.flags & FLAG_LZO_COMPRESSED ? compressed_lzo : 
+      fl->header.flags & FLAG_LZO_COMPRESSED ? compressed_lzo :
       fl->header.flags & FLAG_BZ2_COMPRESSED ? compressed_bz2 :
       fl->header.flags & FLAG_LZ4_COMPRESSED ? compressed_lz4 :
       fl->header.flags & FLAG_LZMA_COMPRESSED ? compressed_lzma :
@@ -208,7 +212,7 @@ int file_save_as(nf_file_p file, const char* filename) {
 
   for (int i = 0; i < file->header.NumBlocks; ++i) {
     int result = _write_block(f, file->blocks[i]);
-    if (result != 0) 
+    if (result != 0)
       goto failure;
   }
 
@@ -225,7 +229,7 @@ failure:
 static int _read_block(FILE *f, nf_block_t* block) {
   size_t bytes_read = fread(&block->header, 1, sizeof(block->header), f);
   if (bytes_read != sizeof(block->header)) {
-    // Only whine when not immediately at end of file. 
+    // Only whine when not immediately at end of file.
     if (bytes_read != 0)
       msg(log_error, "Failed to read block header\n");
     goto failure;

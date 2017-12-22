@@ -1,11 +1,14 @@
-/** 
+/**
  * \file compress.c
  * \brief Block (de)compression functions
  *
  * \author J.R.Versteegh <j.r.versteegh@orca-st.com>
  *
- * \copyright (C) 2017 SURFnet. All rights reserved.
- * \license This software may be modified and distributed under the 
+ * \copyright
+ * (C) 2017 Jaap Versteegh. All rights reserved.
+ * (C) 2017 SURFnet. All rights reserved.
+ * \license
+ * This software may be modified and distributed under the
  * terms of the BSD license. See the LICENSE file for details.
  */
 
@@ -104,9 +107,9 @@ int compress_lzma(const char* source, const size_t source_len, char* target, siz
       lzma_preset,       // preset: high values are expensive and don't bring much
       LZMA_CHECK_CRC64,  // data corruption check
       NULL,              // allocator. NULL means (malloc, free)
-      (uint8_t*)source, 
+      (uint8_t*)source,
       source_len,
-      (uint8_t*)target, 
+      (uint8_t*)target,
       &target_pos,
       *target_len);
   *target_len = target_pos;
@@ -140,7 +143,7 @@ size_t compress_max_size_lz4(const size_t uncompressed_size) {
   return uncompressed_size;
 #endif
 }
- 
+
 
 size_t compress_max_size_lzma(const size_t uncompressed_size) {
 #ifdef HAVE_LIBLZMA
@@ -164,7 +167,7 @@ int decompress_lzo(const char* source, const size_t source_len, char* target, si
       (lzo_bytep)source,
       source_len,
       (lzo_bytep)target,
-      target_len, 
+      target_len,
       NULL);
 }
 
@@ -358,7 +361,7 @@ int decompress(nf_block_t* block) {
       size,
       buffer,
       &buffer_size)) != decompress_funs_list[compression].ok_result) {
-    if (result == decompress_funs_list[compression].buffer_error 
+    if (result == decompress_funs_list[compression].buffer_error
         && buffer_size < 64 * size) {
       // Double size of decompression buffer if it was too small
       buffer_size *= 2;
