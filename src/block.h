@@ -13,12 +13,7 @@
 #define _BLOCK_H
 
 #include "types.h"
-
-typedef struct {
-  L_record_header_t header;
-  char data[];
-} nf_record_t;
-typedef nf_record_t* nf_record_p;
+#include "record.h"
 
 
 typedef struct {
@@ -36,7 +31,7 @@ typedef nf_block_t* nf_block_p;
 
 typedef void (*block_handler_p) (const int, nf_block_p);
 
-extern nf_block_p new_block();
-extern void free_block(nf_block_p *bl);
+extern nf_block_p block_new();
+extern void block_free(nf_block_p *block);
 
 #endif

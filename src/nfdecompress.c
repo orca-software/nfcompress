@@ -16,10 +16,10 @@ int main(int argc, char* argv[])
   for (int i = 1; i < argc; ++i) {
     char *filename = argv[i];
 #ifdef _OPENMP
-    nf_file_t* fl = load(filename, &decompressor);
+    nf_file_t* fl = file_load(filename, &decompressor);
 #else
     // When not using OpenMP, it's faster to first read the whole file...
-    nf_file_t* fl = load(filename, NULL);
+    nf_file_t* fl = file_load(filename, NULL);
 #endif
     if (fl == NULL) {
       msg(log_error, "Failed to load file: %s\n", filename);

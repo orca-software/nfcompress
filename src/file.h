@@ -15,19 +15,23 @@
 #include "block.h"
 
 typedef struct {
+  // Meta data
   size_t size;
+  char* name;
+  // Data
   file_header_t header;
   stat_record_t stats;
   nf_block_p blocks[];
 } nf_file_t;
 typedef nf_file_t* nf_file_p;
 
-extern nf_file_t* load(const char* filename, block_handler_p handle_block);
-extern int save(const char* filename, nf_file_t* fl);
-extern void for_each_block(nf_file_t* fl, block_handler_p handle_block);
-extern int blocks_status(nf_file_t* fl);
 
-extern nf_file_p new_file();
-extern void free_file(nf_file_p *fl);
+extern nf_file_p file_new();
+extern nf_file_p file_load(const char* filename, block_handler_p handle_block);
+extern void file_free(nf_file_p *file);
+
+extern int file_save(const nf_file_p file);
+extern int file_save_as(nf_file_p file, const char* filename);
+extern int file_for_each_block(const nf_file_p file, block_handler_p handle_block);
 
 #endif

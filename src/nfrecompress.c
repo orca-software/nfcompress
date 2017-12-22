@@ -86,10 +86,10 @@ int main(int argc, char* argv[])
     char *filename = argv[i];
 #ifndef _OPENMP
     // For the single core case it's faster to first read the file...
-    nf_file_t* fl = load(filename, NULL);
+    nf_file_p fl = file_load(filename, NULL);
 #else
     // , but for the multicore case: start decompressing while reading
-    nf_file_t* fl = load(filename, &decompressor);
+    nf_file_p fl = file_load(filename, &decompressor);
 #endif
     if (fl == NULL) {
       msg(log_error, "Failed to load file: %s\n", filename);
@@ -97,40 +97,44 @@ int main(int argc, char* argv[])
     }
 #ifndef _OPENMP
     // ... and than decompress
-    for_each_block(fl, &decompressor);
+    result = for_each_block(fl, &decompressor);
+    if (result < 0) {
+      msg(log_error, "Failed to decompress block in: %s\n", filename);
+      return result;
+    }
 #endif
     switch(compression) {
       case compressed_none:
         break;
       case compressed_lzo:
-        for_each_block(fl, &lzo_compressor);
+        result = file_for_each_block(fl, &lzo_compressor);
         break;
       case compressed_lz4:
-        for_each_block(fl, &lz4_compressor);
+        result = file_for_each_block(fl, &lz4_compressor);
         break;
       case compressed_bz2:
         if (preset > 0)
           bz2_preset = preset;
-        for_each_block(fl, &bz2_compressor);
+        result = file_for_each_block(fl, &bz2_compressor);
         break;
       case compressed_lzma:
         if (preset >= 0)
           lzma_preset = preset;
-        for_each_block(fl, &lzma_compressor);
+        result = file_for_each_block(fl, &lzma_compressor);
         break;
       default:
         msg(log_error, "Unexpected compression method");
         result = -1;
     }
-    if (blocks_status(fl) < 0) {
-      msg(log_error, "One or more blocks have an invalid status\n");
+    if (result < 0) {
+      msg(log_error, "Compression failed\n");
       result = -1;
     }
-    else if (save(filename, fl) != 0) {
+    else if (file_save_as(fl, filename) != 0) {
       msg(log_error, "Failed to save file: %s\n", filename);
       result = -1;
     }
-    free_file(&fl);
+    file_free(&fl);
   }
   msg(log_info, "Done\n");
   return result;

@@ -17,76 +17,19 @@
 #include "compress.h"
 #include "file.h"
 
-int read_block(FILE *f, nf_block_t* block) {
-  size_t bytes_read = fread(&block->header, 1, sizeof(block->header), f);
-  if (bytes_read != sizeof(block->header)) {
-    // Only whine when not immediately at end of file. 
-    if (bytes_read != 0)
-      msg(log_error, "Failed to read block header\n");
-    goto failure;
-  }
-  block->data = (char*)malloc(block->header.size);
-  if (block->data == NULL) {
-    msg(log_error, "Failed to allocate block data\n");
-    goto failure;
-  }
-  bytes_read = fread(block->data, 1, block->header.size, f);
-  if (bytes_read != block->header.size) {
-    msg(log_error, "Failed to read block data\n");
-    goto failure;
-  }
-  block->status = 0;
-  return 0;
-failure:
-  free(block->data);
-  block->data = NULL;
-  block->header.size = 0;
-  block->status = -1;
-  return -1;
+static int _read_block(FILE *f, nf_block_t* block);
+static int _write_block(FILE *f, nf_block_t* block);
+static int _blocks_status(const nf_file_p file);
+static void _handle_free_block(int blocknum, nf_block_p block);
+
+nf_file_p file_new()
+{
+  return (nf_file_p)calloc(1, sizeof(nf_file_t));
 }
 
 
-int write_block(FILE *f, nf_block_t* block) {
-  if (block->status != 0) {
-    msg(log_error, "Invalid block\n");
-    goto failure;
-  }
-  size_t bytes_written = fwrite(&block->header, 1, sizeof(block->header), f);
-  if (bytes_written != sizeof(block->header)) {
-    msg(log_error, "Failed to write block header\n");
-    goto failure;
-  }
-  bytes_written = fwrite(block->data, 1, block->header.size, f);
-  if (bytes_written != block->header.size) {
-    msg(log_error, "Failed to write block data\n");
-    goto failure;
-  }
-  return 0;
-failure:
-  return -1;
-}
-
-
-void for_each_block(nf_file_p fl, block_handler_p handle_block) {
-  #pragma omp parallel for
-  for (int i = 0; i < fl->header.NumBlocks; ++i) {
-    handle_block(i, fl->blocks[i]);
-  }
-}
-
-
-int blocks_status(nf_file_p fl) {
-  int result = 0;
-  for (int i = 0; i < fl->header.NumBlocks; ++i) {
-    if (fl->blocks[i]->status < result) 
-      result = fl->blocks[i]->status;
-  }
-  return result;
-}
-
-
-nf_file_t* load(const char* filename, block_handler_p handle_block) {
-  nf_file_p fl = new_file();
+nf_file_p file_load(const char* filename, block_handler_p handle_block) {
+  nf_file_p fl = file_new();
   if (fl == NULL) {
     msg(log_error, "Failed to allocate file buffer\n");
     return NULL;
@@ -136,12 +79,12 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
   #pragma omp parallel
   #pragma omp master
   for (;;) {
-    nf_block_p block = new_block();
+    nf_block_p block = block_new();
     if (block == NULL) {
       msg(log_error, "Failed to allocate block buffer\n");
       break;
     }
-    if (read_block(f, block) != 0) {
+    if (_read_block(f, block) != 0) {
       free(block);
       break;
     }
@@ -175,64 +118,102 @@ nf_file_t* load(const char* filename, block_handler_p handle_block) {
     goto failure;
   }
 
-  if (blocks_status(fl) < 0) {
+  if (_blocks_status(fl) < 0) {
     msg(log_error, "One or more blocks failed to load properly\n");
     goto failure;
   }
 
   fl->size = ftell(f);
+
   fclose(f);
   return fl;
 failure:
   if (f)
     fclose(f);
-  free_file(&fl);
+  file_free(&fl);
   return NULL;
 }
 
 
-int save(const char* filename, nf_file_t* fl) {
+void file_free(nf_file_p *file) {
+  if (*file == NULL)
+    return;
+  nf_file_p fl = *file;
+  *file = NULL;
+  file_for_each_block(fl, &_handle_free_block);
+  free(fl);
+}
+
+
+int file_for_each_block(const nf_file_p file, block_handler_p handle_block) {
+  #pragma omp parallel for
+  for (int i = 0; i < file->header.NumBlocks; ++i) {
+    handle_block(i, file->blocks[i]);
+  }
+  return _blocks_status(file);
+}
+
+
+static int _blocks_status(const nf_file_p file) {
+  int result = 0;
+  for (int i = 0; i < file->header.NumBlocks; ++i) {
+    if (file->blocks[i]->status < result) {
+      result = file->blocks[i]->status;
+    }
+  }
+  return result;
+}
+
+
+int file_save(const nf_file_p file) {
+}
+
+
+int file_save_as(nf_file_p file, const char* filename) {
   msg(log_info, "Writing %s\n", filename);
 
-  if (fl->header.NumBlocks == 0) {
+  if (file->header.NumBlocks == 0) {
     msg(log_error, "Not saving empty file");
     return -1;
   }
 
-  compression_t file_compression = fl->blocks[0]->compression;
+  compression_t file_compression = file->blocks[0]->compression;
   // Switch of all compression flags
   for (compression_t cmpr = compressed_none; cmpr < compressed_term; ++cmpr) {
-    fl->header.flags &= ~compression_flags[cmpr];
+    file->header.flags &= ~compression_flags[cmpr];
   }
   // ... and then select the compression method of the first block as compression type
-  fl->header.flags |= compression_flags[file_compression];
-  msg(log_info, "File compression: %d  flags:%u\n", file_compression, fl->header.flags);
+  file->header.flags |= compression_flags[file_compression];
+  msg(log_info, "File compression: %d  flags:%u\n", file_compression, file->header.flags);
 
   FILE *f = fopen(filename, "wb");
   if (!f) {
     msg(log_error, "Failed to open: %s\n", filename);
     goto failure;
   }
-  size_t bytes_written = fwrite(&fl->header, 1, sizeof(fl->header), f);
-  if (bytes_written != sizeof(fl->header)) {
+  size_t bytes_written = fwrite(&file->header, 1, sizeof(file->header), f);
+  if (bytes_written != sizeof(file->header)) {
     msg(log_error, "Failed to write file header\n");
     goto failure;
   }
   msg(log_debug, "Written file header\n");
 
-  bytes_written = fwrite(&fl->stats, 1, sizeof(fl->stats), f);
-  if (bytes_written != sizeof(fl->stats)) {
+  bytes_written = fwrite(&file->stats, 1, sizeof(file->stats), f);
+  if (bytes_written != sizeof(file->stats)) {
     msg(log_error, "Failed to write file stats\n");
     goto failure;
   }
 
   msg(log_debug, "Written file stats\n");
 
-  for (int i = 0; i < fl->header.NumBlocks; ++i) {
-    int result = write_block(f, fl->blocks[i]);
+  for (int i = 0; i < file->header.NumBlocks; ++i) {
+    int result = _write_block(f, file->blocks[i]);
     if (result != 0) 
       goto failure;
   }
+
+  free(file->name);
+  file->name = strdup(filename);
 
   fclose(f);
   return 0;
@@ -241,22 +222,57 @@ failure:
 }
 
 
-void handle_free_block(int blocknum, nf_block_p block) {
-  free_block(&block);
+static int _read_block(FILE *f, nf_block_t* block) {
+  size_t bytes_read = fread(&block->header, 1, sizeof(block->header), f);
+  if (bytes_read != sizeof(block->header)) {
+    // Only whine when not immediately at end of file. 
+    if (bytes_read != 0)
+      msg(log_error, "Failed to read block header\n");
+    goto failure;
+  }
+  block->data = (char*)malloc(block->header.size);
+  if (block->data == NULL) {
+    msg(log_error, "Failed to allocate block data\n");
+    goto failure;
+  }
+  bytes_read = fread(block->data, 1, block->header.size, f);
+  if (bytes_read != block->header.size) {
+    msg(log_error, "Failed to read block data\n");
+    goto failure;
+  }
+  block->status = 0;
+  return 0;
+failure:
+  free(block->data);
+  block->data = NULL;
+  block->header.size = 0;
+  block->status = -1;
+  return -1;
 }
 
 
-nf_file_p new_file()
-{
-  return (nf_file_p)calloc(1, sizeof(nf_file_t));
+static int _write_block(FILE *f, nf_block_t* block) {
+  if (block->status != 0) {
+    msg(log_error, "Invalid block\n");
+    goto failure;
+  }
+  size_t bytes_written = fwrite(&block->header, 1, sizeof(block->header), f);
+  if (bytes_written != sizeof(block->header)) {
+    msg(log_error, "Failed to write block header\n");
+    goto failure;
+  }
+  bytes_written = fwrite(block->data, 1, block->header.size, f);
+  if (bytes_written != block->header.size) {
+    msg(log_error, "Failed to write block data\n");
+    goto failure;
+  }
+  return 0;
+failure:
+  return -1;
 }
 
 
-void free_file(nf_file_p *file) {
-  if (*file == NULL)
-    return;
-  nf_file_p fl = *file;
-  *file = NULL;
-  for_each_block(fl, &handle_free_block);
-  free(fl);
+static void _handle_free_block(int blocknum, nf_block_p block) {
+  block_free(&block);
 }
+
