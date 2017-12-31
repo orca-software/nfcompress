@@ -15,6 +15,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ** Defines and types from nffile.h
 #define IDENTLEN	128
 #define IDENTNONE	"none"
@@ -114,6 +118,9 @@ typedef enum {
 } compression_t;
 
 
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif
 

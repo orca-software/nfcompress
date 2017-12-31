@@ -17,6 +17,9 @@
 
 #include "block.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static const uint32_t compression_flags[] = {
   0x0,
@@ -53,6 +56,10 @@ typedef struct {
   const int buffer_error;
 } transform_funs_t;
 extern const transform_funs_t compress_funs_list[];
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif
 

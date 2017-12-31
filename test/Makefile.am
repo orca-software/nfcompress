@@ -1,5 +1,5 @@
 check_SCRIPTS = test.sh unittests.sh
-check_DATA = nfcapd.test1 nfcapd.test2
+check_DATA = nfcapd.test1 nfcapd.test2 nfcapd.testlzo
 
 TESTS = $(check_SCRIPTS)
 EXTRA_DIST = $(check_DATA)

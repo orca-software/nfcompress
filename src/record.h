@@ -17,7 +17,9 @@
 
 #include "types.h"
 
-#include "record.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
   union {
@@ -34,5 +36,9 @@ typedef nf_record_t* nf_record_p;
 extern nf_record_p record_new(const size_t size);
 extern nf_record_p record_copy(const nf_record_p record);
 extern void record_free(nf_record_p *record);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif

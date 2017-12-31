@@ -188,7 +188,7 @@ int file_save_as(nf_file_p file, const char* filename) {
   }
   // ... and then select the compression method of the first block as compression type
   file->header.flags |= compression_flags[file_compression];
-  msg(log_info, "File compression: %d  flags:%u\n", file_compression, file->header.flags);
+  msg(log_info, "File compression: %d  flags: %u\n", file_compression, file->header.flags);
 
   FILE *f = fopen(filename, "wb");
   if (!f) {

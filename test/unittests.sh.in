@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -x unittests ]; then
-  ./unittests
+  ./unittests @top_srcdir@/test
 else
   exit 77
 fi

@@ -17,6 +17,10 @@
 
 #include "block.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
   // Meta data
   size_t size;
@@ -36,5 +40,9 @@ extern void file_free(nf_file_p *file);
 extern int file_save(const nf_file_p file);
 extern int file_save_as(nf_file_p file, const char* filename);
 extern int file_for_each_block(const nf_file_p file, block_handler_p handle_block);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif

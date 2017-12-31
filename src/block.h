@@ -15,6 +15,9 @@
 #include "types.h"
 #include "record.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
   // Meta data
@@ -35,5 +38,9 @@ typedef void (*block_handler_p) (const int, nf_block_p);
 
 extern nf_block_p block_new();
 extern void block_free(nf_block_p *block);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif

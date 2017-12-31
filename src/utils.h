@@ -12,8 +12,16 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum { log_debug, log_info, log_error } log_level_t;
 
 extern void msg(log_level_t log_level, const char *message, ...);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif
