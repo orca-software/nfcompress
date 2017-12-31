@@ -13,6 +13,7 @@
 /install-sh
 /missing
 /src/.deps/
+/src/.testdeps/
 /src/Makefile
 /src/Makefile.in
 /src/*.o
@@ -20,6 +21,7 @@
 /src/nfdecompress
 /src/nfrecompress
 /src/nffileinfo
+/src/.dirstamp
 /doc/Doxyfile
 /doc/Makefile
 /doc/Makefile.in
@@ -35,3 +37,9 @@
 /test/test.sh.log
 /test/test.sh.trs
 /test/test.temp*
+/test/.testdeps/
+/test/unittests
+/test/unittests-unittests.o
+/test/unittests.sh.log
+/test/unittests.sh.trs
+
