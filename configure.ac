@@ -13,6 +13,7 @@ AC_CONFIG_FILES([
   test/Makefile
 ])
 AC_CONFIG_FILES([test/test.sh], [chmod +x test/test.sh])
+AC_CONFIG_FILES([test/unittests.sh], [chmod +x test/unittests.sh])
 
 AC_CHECK_LIB(
   lzo2,

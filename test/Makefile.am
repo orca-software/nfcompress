@@ -1,5 +1,6 @@
 check_SCRIPTS = test.sh unittests.sh
 check_DATA = nfcapd.test1 nfcapd.test2
+
 TESTS = $(check_SCRIPTS)
 EXTRA_DIST = $(check_DATA)
 DEPDIR = .testdeps
@@ -24,3 +25,4 @@ test: check
 
 clean-local:
 	rm -f test.temp*
+	rm -f unittest.
